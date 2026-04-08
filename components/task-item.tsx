@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { deleteTask, toggleTask, updateTask } from "@/actions/task-actions";
+import { toast } from "sonner";
 
 type TaskItemProps = {
   task: {
@@ -53,7 +54,17 @@ export function TaskItem({ task }: TaskItemProps) {
 
         {!isEditing && (
           <div className="flex flex-wrap gap-2">
-            <form action={toggleTask}>
+            <form action={(formData) => {
+                  startTransition(async () => {
+                    try {
+                      await toggleTask(formData);
+                      toast.success("Estado actualizado");
+                    } catch {
+                      toast.error("Error al actualizar");
+                    }
+                  });
+                }}
+>
               <input type="hidden" name="taskId" value={task.id} />
               <input type="hidden" name="done" value={String(task.done)} />
               <button
@@ -74,18 +85,24 @@ export function TaskItem({ task }: TaskItemProps) {
               </button>
             )}
 
-                <form action={(formData) => {
-                    const confirmed = window.confirm(
-                    "¿Estás seguro de que deseas eliminar esta tarea?"
-                    );
+                  <form
+                    action={(formData) => {
+                      const confirmed = window.confirm(
+                        "¿Estás seguro de que deseas eliminar esta tarea?"
+                      );
 
-                    if (!confirmed) return;
+                      if (!confirmed) return;
 
-                    startTransition(async () => {
-                    await deleteTask(formData);
-                    });
-                }}
-                >
+                      startTransition(async () => {
+                        try {
+                          await deleteTask(formData);
+                          toast.success("Tarea eliminada");
+                        } catch {
+                          toast.error("Error al eliminar");
+                        }
+                      });
+                    }}
+                  >
                 <input type="hidden" name="taskId" value={task.id} />
                 <button
                     type="submit"
@@ -100,15 +117,21 @@ export function TaskItem({ task }: TaskItemProps) {
       </div>
 
       {isEditing && (
-        <form
-          action={(formData) => {
-            startTransition(async () => {
-              await updateTask(formData);
-              setIsEditing(false);
-            });
-          }}
-          className="space-y-3 border-t pt-4"
-        >
+          <form
+              action={(formData) => {
+                startTransition(async () => {
+                  try {
+                    await updateTask(formData);
+                    toast.success("Tarea actualizada");
+                    setIsEditing(false);
+                  } catch {
+                    toast.error("Error al actualizar");
+                  }
+                });
+              }}
+              className="space-y-3 border-t pt-4"
+            >
+
           <input type="hidden" name="taskId" value={task.id} />
 
           <input

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { logoutUser } from "@/actions/auth-actions";
 import { createTask } from "@/actions/task-actions";
 import { TaskItem } from "@/components/task-item";
+import { CreateTaskForm } from "@/components/create-task-form";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -77,27 +78,7 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <form action={createTask} className="space-y-3">
-            <input
-              name="title"
-              type="text"
-              placeholder="Título de la tarea"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/10"
-            />
-
-            <textarea
-              name="content"
-              placeholder="Descripción de la tarea"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black/10 min-h-[100px]"
-            />
-
-            <button
-              type="submit"
-              className="rounded-lg bg-black text-white px-4 py-2.5 text-sm font-medium hover:opacity-90 transition"
-            >
-              Crear tarea
-            </button>
-          </form>
+          <CreateTaskForm/>
         </section>
 
         <section className="rounded-2xl border bg-white p-6 shadow-sm space-y-4">
