@@ -4,30 +4,43 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/auth";
+import { loginSchema, registerSchema } from "@/schemas/auth.schema";
+import { AuthError } from "next-auth";
 
-export async function registerUser(formData: FormData): Promise<void> {
-  const name = formData.get("name")?.toString().trim() || "";
-  const email = formData.get("email")?.toString().trim() || "";
-  const password = formData.get("password")?.toString() || "";
+export type AuthActionState = {
+  error?: string;
+};
 
-  if (!name || !email || !password) {
-    throw new Error("Todos los campos son obligatorios");
+export async function registerUser(
+  prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const result = registerSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
   }
+
+  const { name, email, password } = result.data;
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
 
   if (existingUser) {
-    throw new Error("El usuario ya existe");
+    return { error: "El usuario ya existe" };
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
   await prisma.user.create({
     data: {
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
       password: hashedPassword,
     },
   });
@@ -35,23 +48,56 @@ export async function registerUser(formData: FormData): Promise<void> {
   redirect("/login");
 }
 
-export async function loginUser(formData: FormData): Promise<void> {
-  const email = formData.get("email")?.toString().trim() || "";
-  const password = formData.get("password")?.toString() || "";
+export async function loginUser(
+  prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const result = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
-  if (!email || !password) {
-    throw new Error("Correo y contraseña son obligatorios");
+  if (!result.success) {
+    return { error: result.error.issues[0].message };
   }
 
-  await signIn("credentials", {
-    email,
-    password,
-    redirectTo: "/dashboard",
-  });
+  const { email, password } = result.data;
+
+  try {
+    await signIn("credentials", {
+      email: email.trim(),
+      password,
+      redirectTo: "/dashboard",
+    });
+
+    return {};
+  } catch (error) {
+    if (error instanceof AuthError) {
+      if (error.type === "CredentialsSignin") {
+        return { error: "Correo o contraseña incorrectos" };
+      }
+
+      return { error: "No se pudo iniciar sesión" };
+    }
+
+    throw error;
+  }
 }
 
 export async function logoutUser(): Promise<void> {
   await signOut({
     redirectTo: "/login",
+  });
+}
+
+export async function loginWithGoogle(): Promise<void> {
+  await signIn("google", {
+    redirectTo: "/dashboard",
+  });
+}
+
+export async function loginWithGitHub(): Promise<void> {
+  await signIn("github", {
+    redirectTo: "/dashboard",
   });
 }
