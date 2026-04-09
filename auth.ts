@@ -6,12 +6,6 @@ import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
-console.log("GITHUB ID:", process.env.AUTH_GITHUB_ID);
-console.log(
-  "GITHUB SECRET EXISTS:",
-  !!process.env.AUTH_GITHUB_SECRET
-);
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
 
